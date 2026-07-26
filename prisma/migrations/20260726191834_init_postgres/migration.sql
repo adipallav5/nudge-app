@@ -1,6 +1,6 @@
 -- CreateTable
 CREATE TABLE "User" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "password" TEXT NOT NULL,
     "habitName" TEXT DEFAULT 'Workout',
@@ -9,11 +9,13 @@ CREATE TABLE "User" (
     "onboarded" BOOLEAN NOT NULL DEFAULT false,
     "currentStreak" INTEGER NOT NULL DEFAULT 0,
     "longestStreak" INTEGER NOT NULL DEFAULT 0,
-    "lastCheckInDate" DATETIME,
-    "lastNudgeDate" DATETIME,
+    "lastCheckInDate" TIMESTAMP(3),
+    "lastNudgeDate" TIMESTAMP(3),
     "nudgeStage" INTEGER NOT NULL DEFAULT 0,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
