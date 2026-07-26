@@ -1,0 +1,10 @@
+
+> temp_dir@0.1.0 start
+> next start
+
+▲ Next.js 16.2.10
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+✓ Ready in 243ms
+[next-auth][warn][NEXTAUTH_URL]
+https://next-auth.js.org/warnings#nextauth_url
