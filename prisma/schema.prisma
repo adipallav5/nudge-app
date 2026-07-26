@@ -1,0 +1,32 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String   @id @default(uuid())
+  email           String   @unique
+  password        String
+
+  // Onboarding
+  habitName       String?  @default("Workout")
+  reminderTime    String?  // HH:MM format like "09:00"
+  timezone        String?  // e.g. "America/New_York"
+  onboarded       Boolean  @default(false)
+
+  // Stats
+  currentStreak   Int      @default(0)
+  longestStreak   Int      @default(0)
+  lastCheckInDate DateTime?
+
+  // Cron/Nudges
+  lastNudgeDate   DateTime?
+  nudgeStage      Int      @default(0) // 0: none, 1: missed 1 day, 2: missed 2 days, 3: missed 4+ days (reset)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
