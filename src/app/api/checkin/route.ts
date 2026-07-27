@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { toZonedTime, format } from "date-fns-tz";
+import { toZonedTime } from "date-fns-tz";
 import { startOfDay, differenceInDays } from "date-fns";
 
 export async function POST(req: Request) {
@@ -30,6 +30,8 @@ export async function POST(req: Request) {
 
     let newStreak = user.currentStreak;
     let newLongestStreak = user.longestStreak;
+    let isFirstCheckin = false;
+    let isPostLapse = false;
 
     if (user.lastCheckInDate) {
       const zonedLastCheckIn = toZonedTime(user.lastCheckInDate, userTimezone);
@@ -46,14 +48,21 @@ export async function POST(req: Request) {
       } else {
         // Lapsed, reset streak
         newStreak = 1;
+        isPostLapse = true;
       }
     } else {
       // First check-in
       newStreak = 1;
+      isFirstCheckin = true;
     }
 
+    let isNewRecord = false;
     if (newStreak > newLongestStreak) {
       newLongestStreak = newStreak;
+      // We only consider it a 'new record milestone' message if it's > 1
+      if (newStreak > 1) {
+        isNewRecord = true;
+      }
     }
 
     const updatedUser = await prisma.user.update({
@@ -66,7 +75,16 @@ export async function POST(req: Request) {
       }
     });
 
-    return NextResponse.json({ success: true, user: updatedUser });
+    return NextResponse.json({
+      success: true,
+      user: updatedUser,
+      checkinContext: {
+        isFirstCheckin,
+        isPostLapse,
+        isNewRecord,
+        currentStreak: newStreak
+      }
+    });
   } catch (error) {
     console.error("Check-in error:", error);
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
