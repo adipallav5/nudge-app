@@ -10,6 +10,9 @@ import { emailTemplates } from "@/lib/email-templates";
 // and we'll log if we can't send.
 const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy_key');
 
+// Default fallback to localhost if APP_URL is not set
+const appUrl = process.env.APP_URL || "http://localhost:3000";
+
 export async function GET(req: Request) {
   try {
     // Basic security for cron (optional, usually passing a Bearer token or checking IP)
@@ -54,12 +57,6 @@ export async function GET(req: Request) {
       }
 
       // Calculate days missed
-      // differenceInDays between today and last check in day
-      // 0 = checked in today
-      // 1 = checked in yesterday (NOT lapsed)
-      // 2 = missed 1 day (last check in was day before yesterday)
-      // 3 = missed 2 days
-      // 5 = missed 4 days
       let daysPassed = 0;
       if (user.lastCheckInDate) {
         const zonedLastCheckIn = toZonedTime(user.lastCheckInDate, userTimezone);
@@ -75,19 +72,14 @@ export async function GET(req: Request) {
       let newStage = user.nudgeStage;
 
       // Logic: Missed 1 day -> soft, 2 days -> direct, 4+ days -> reset
-      // We only want to send the "missed 1 day" if they are at stage 0 (or we haven't sent it yet)
-      // Actually, if daysMissed == 1 AND nudgeStage < 1: send soft, stage=1
-      // If daysMissed == 2 AND nudgeStage < 2: send direct, stage=2
-      // If daysMissed >= 4 AND nudgeStage < 3: send reset, stage=3
-
       if (daysMissed === 1 && user.nudgeStage < 1) {
-        template = emailTemplates.soft(user.habitName);
+        template = emailTemplates.soft(user.habitName, user.id, appUrl, 1);
         newStage = 1;
       } else if (daysMissed === 2 && user.nudgeStage < 2) {
-        template = emailTemplates.direct(user.habitName);
+        template = emailTemplates.direct(user.habitName, user.id, appUrl, 2);
         newStage = 2;
       } else if (daysMissed >= 4 && user.nudgeStage < 3) {
-        template = emailTemplates.reset(user.habitName);
+        template = emailTemplates.reset(user.habitName, user.id, appUrl, 3);
         newStage = 3;
       }
 
@@ -104,6 +96,7 @@ export async function GET(req: Request) {
             });
           } else {
             console.log(`[Simulated Email to ${user.email}]: ${template.subject}`);
+            console.log(template.html);
           }
 
           // Update user

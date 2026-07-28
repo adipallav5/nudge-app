@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
+import { getCheckinMessage } from "@/lib/checkin-messages";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -11,6 +12,7 @@ export default function DashboardPage() {
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [checkingIn, setCheckingIn] = useState(false);
+  const [checkinMessage, setCheckinMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -29,6 +31,10 @@ export default function DashboardPage() {
           router.push("/onboarding");
         } else {
           setUserData(data);
+          // If already checked in today upon load, we don't have the context of how they checked in,
+          // so we just show a generic 'already checked in' message or re-calculate it if we want.
+          // For simplicity, we just won't show the dynamic context message if they reload the page.
+          // A fresh check-in will set it.
         }
       }
     } catch (err) {
@@ -45,6 +51,16 @@ export default function DashboardPage() {
       if (res.ok) {
         const data = await res.json();
         setUserData(data.user);
+
+        if (data.checkinContext) {
+           const msg = getCheckinMessage(
+             data.checkinContext.isFirstCheckin,
+             data.checkinContext.isPostLapse,
+             data.checkinContext.isNewRecord,
+             data.checkinContext.currentStreak
+           );
+           setCheckinMessage(msg);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -99,7 +115,7 @@ export default function DashboardPage() {
 
           {isCheckedInToday ? (
             <div className="rounded-md bg-green-50 p-4 text-green-700 font-medium">
-              Awesome job! You've already checked in today. See you tomorrow.
+              {checkinMessage ? checkinMessage : "Awesome job! You've already checked in today. See you tomorrow."}
             </div>
           ) : (
             <button
